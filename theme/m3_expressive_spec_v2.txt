@@ -1,0 +1,489 @@
+=====================================================================
+DESIGN SPEC v2: Material 3 Expressive (Android 16 / Pixel style)
+PALETTE: SUPPLIED BY THE USER (HEX codes), NOT DEFINED IN THIS FILE
+=====================================================================
+Purpose: single source of truth for the visual style of an Android app
+(Kotlin + Jetpack Compose). Based on reference screenshots of Google's
+Material 3 Expressive (widgets, FAB menu, floating toolbar, wavy
+progress, keypad, media player, timer/breathing/payments screens).
+Numeric values are close approximations, not an official dump.
+If the user provides a screenshot that contradicts this file, the
+screenshot wins.
+
+!!! AGENT RULE #1 (COLORS) !!!
+This file intentionally contains NO color values. The user will give a
+palette in HEX codes (see section 2). Until the palette is provided:
+  - DO NOT invent, guess or reuse default Material purple/lavender/pink.
+  - Ask the user for the HEX codes.
+  - Build all UI strictly through color ROLES (primary, surface,
+    secondaryContainer, ...) so the palette can be dropped in later.
+  - Never hardcode a HEX inside composables, only in the theme file.
+The screenshots show lavender/pink/green/yellow colors: those are just
+one example palette. IGNORE the hues in screenshots; copy only shapes,
+layout, hierarchy, sizes, typography and motion.
+
+---------------------------------------------------------------------
+0. ONE-PARAGRAPH SUMMARY
+---------------------------------------------------------------------
+Material 3 Expressive = Material You base (tonal surfaces, color roles)
+pushed much further: very round and VARIED shapes (pills, squircles,
+scalloped "cookie" flowers), huge bold or quirky variable-font type,
+big touch targets, strong contrast between the one important element
+and everything else, wavy (sine) progress lines, shape-morphing buttons
+and springy animations that overshoot slightly and settle. Depth comes
+from tonal color containers, not shadows. Many different color roles are
+used side by side on one screen (a pill in primaryContainer next to a
+squircle in tertiaryContainer next to a card in surfaceContainer), so
+the screen feels playful but still follows strict role logic.
+
+---------------------------------------------------------------------
+1. CORE PRINCIPLES (visible in the references)
+---------------------------------------------------------------------
+1. Big and bold: giant numerals (timers, temperature, balance), large
+   emphasized titles, large pill buttons with generous padding.
+2. Round everything: pills for actions and inputs, squircles
+   (rounded squares) for FABs and tiles, big radii on cards/widgets.
+3. Shape variety is the signature: pill + squircle + circle + scalloped
+   cookie on the same screen. Do not make everything the same radius.
+4. One dominant action per screen: biggest, most saturated container
+   (e.g. wide "Pause" pill at the bottom). Secondary actions = tonal.
+5. Tonal containers instead of shadows: separate areas by container
+   color role, almost no elevation shadows.
+6. Shape = state: pressed/selected elements change shape (pill <->
+   squircle, circle <-> cookie). Animate the morph.
+7. Wavy progress: active part of seek bars / progress is a moving sine
+   wave; inactive part is a straight line ending with a small dot.
+8. Motion is springy: position/size/shape overshoot a bit; color and
+   alpha never overshoot.
+9. Edge-to-edge, transparent system bars, content scrolls under.
+10. Content dense but airy: 16-24dp margins, 8-12dp gaps between
+    containers, rounded containers nested in rounded containers.
+
+---------------------------------------------------------------------
+2. COLOR SYSTEM: USER-SUPPLIED PALETTE (FILL ME IN)
+---------------------------------------------------------------------
+2.1 Palette block. The user pastes HEX codes here (or in chat). The
+    agent maps them into lightColorScheme / darkColorScheme.
+
+  DARK scheme                         LIGHT scheme
+  primary                 #______     primary                 #______
+  onPrimary               #______     onPrimary               #______
+  primaryContainer        #______     primaryContainer        #______
+  onPrimaryContainer      #______     onPrimaryContainer      #______
+  secondary               #______     secondary               #______
+  onSecondary             #______     onSecondary             #______
+  secondaryContainer      #______     secondaryContainer      #______
+  onSecondaryContainer    #______     onSecondaryContainer    #______
+  tertiary                #______     tertiary                #______
+  onTertiary              #______     onTertiary              #______
+  tertiaryContainer       #______     tertiaryContainer       #______
+  onTertiaryContainer     #______     onTertiaryContainer     #______
+  error / onError         #______     error / onError         #______
+  errorContainer / on     #______     errorContainer / on     #______
+  background / onBg       #______     background / onBg       #______
+  surface / onSurface     #______     surface / onSurface     #______
+  surfaceVariant          #______     surfaceVariant          #______
+  onSurfaceVariant        #______     onSurfaceVariant        #______
+  surfaceDim              #______     surfaceDim              #______
+  surfaceBright           #______     surfaceBright           #______
+  surfaceContainerLowest  #______     surfaceContainerLowest  #______
+  surfaceContainerLow     #______     surfaceContainerLow     #______
+  surfaceContainer        #______     surfaceContainer        #______
+  surfaceContainerHigh    #______     surfaceContainerHigh    #______
+  surfaceContainerHighest #______     surfaceContainerHighest #______
+  outline / outlineVariant #______    outline / outlineVariant #______
+  inverseSurface / on     #______     inverseSurface / on     #______
+  inversePrimary          #______     inversePrimary          #______
+  scrim                   #000000     scrim                   #000000
+
+  If the user gives fewer colors (e.g. only 4-6 HEX codes), ask which
+  role each one is for, or derive missing roles by shifting lightness
+  (tone) of the given colors, keeping contrast >= 4.5:1 for text, and
+  tell the user what was derived.
+
+2.2 How roles are used (from the references; hue-independent)
+  - Screen background = background/surface.
+  - Big containers (cards, widgets, sheets) = surfaceContainer family.
+    Higher importance/layer = higher container step.
+  - Main big action (e.g. wide "Pause" pill, play button) = primary
+    fill + onPrimary text/icon.
+  - Soft pill buttons (Select, Add photos, Share album, Search in the
+    FAB menu) = primaryContainer (or secondaryContainer) fill +
+    onPrimaryContainer text/icon.
+  - Accent squircle buttons (edit/pencil, add-friend, floating toolbar
+    action) = tertiaryContainer fill + onTertiaryContainer icon.
+  - Selected chip/toggle (e.g. "Going") = primary or secondary fill with
+    check icon; unselected ("Not Going") = surfaceContainerLow/High,
+    no border, rounded-rect shape.
+  - Floating toolbar and nav-rail panels = lightest/darkest surface
+    container, pill or large radius.
+  - Close "X" circle of FAB menu = primary (dark, filled) with
+    onPrimary icon.
+  - Outlined pills ("Updated", "Tap to pay") = 2dp outline in
+    primary/outline color + very light container fill + large label.
+  - Progress: active = primary, inactive track = secondaryContainer or
+    surfaceVariant, end dot = primary.
+  - Widgets may each use a different role family (primary-container,
+    secondary-container, tertiary-container, inverse) to look varied.
+  - Text: onSurface for main, onSurfaceVariant for secondary.
+  - Disabled: content 38% alpha, container 12% alpha.
+  - State layers: hover 8%, focus 10%, pressed 10%, dragged 16% of the
+    content color on top of the container.
+  - Dynamic color (wallpaper-based) is OFF: use only the user palette.
+  - Avoid decorative gradients and colored shadows.
+
+---------------------------------------------------------------------
+3. SHAPE SYSTEM
+---------------------------------------------------------------------
+3.1 Corner radius scale
+  none 0dp | extraSmall 4dp | small 8dp | medium 12dp | large 16dp |
+  largeIncreased 20dp | extraLarge 28dp | extraLargeIncreased 32dp |
+  extraExtraLarge 48dp | full = 50% (pill/circle)
+
+3.2 Shape vocabulary seen in the references
+  PILL            : action buttons, inputs, toolbars, nav indicator,
+                    battery widget, "Updated"/"Tap to pay" outlined pills
+  STADIUM-WIDE    : big weather/temperature widget (pill with one end
+                    larger, ~48dp+ radius, organic)
+  SQUIRCLE        : FAB (+), edit button, floating-toolbar action,
+                    play button in media widget, "Add friend" extended
+                    button, app tiles. Radius about 25-30% of side
+                    (e.g. 56dp button -> 16-20dp; 96dp -> 28-32dp).
+  CIRCLE          : close "X" button, avatars, side media buttons
+  COOKIE/SCALLOP  : 8-12 lobed rounded flower. Used for clock face,
+                    avatar placeholder, loader, leading icon in outlined
+                    pills, "Breathing" progress ring. 1-2 per screen max.
+  ROUNDED RECT    : unselected chips ("Not Going"): radius 12-16dp.
+  LARGE CARD      : widgets, cards, sheets: 28-48dp radius, nested
+                    elements inside use 16-24dp so corners look
+                    concentric (inner radius = outer radius - padding).
+  KEYPAD KEY      : pill (wide rounded) in 3x4 grid; the pressed key
+                    changes shape/color.
+
+3.3 Expressive shape library (MaterialShapes in Compose)
+  Circle, Square, Slanted, Arch, Fan, Pill, Triangle, Diamond, ClamShell,
+  Pentagon, Gem, Sunny, VerySunny, Cookie4/6/7/9/12, Clover4/8, Burst,
+  SoftBurst, Boom, SoftBoom, Flower, Puffy, PuffyDiamond, Ghostish,
+  PixelCircle, PixelTriangle, Bun, Heart, Oval.
+  All can morph into each other (Morph / toShape()).
+
+3.4 Shape morphing rules
+  - Toggle/selected button: pill <-> squircle (shape changes with
+    selection, color changes with it).
+  - Pressed: squarer + scale 0.96-0.98.
+  - Button group: neighbors of the pressed button get narrower.
+  - FAB -> FAB menu: squircle morphs into a circle with "X" while the
+    pills appear with stagger.
+  - Play <-> Pause button: circle/squircle morph with icon crossfade.
+  - Loader: continuously morphs between cookie/sunny/pill shapes.
+  - Duration comes from spring tokens (section 8), ~300-500ms.
+
+---------------------------------------------------------------------
+4. TYPOGRAPHY
+---------------------------------------------------------------------
+Font: Google Sans Flex (Android 16 / Pixel), else Roboto Flex, else
+Roboto. Variable axes are part of the style: weight, WIDTH and
+ROUNDNESS. Expressive screens can also use a monospace/rounded display
+font for hero numerals.
+
+4.1 Baseline scale (size / line-height, weight, tracking)
+  Display Large   57/64 w400 -0.25sp | Display Medium 45/52 w400
+  Display Small   36/44 w400
+  Headline L 32/40 | M 28/36 | S 24/32  (w400)
+  Title L 22/28 w400 | M 16/24 w500 +0.15sp | S 14/20 w500 +0.1sp
+  Body L 16/24 w400 +0.5sp | M 14/20 w400 +0.25sp | S 12/16 w400
+  Label L 14/20 w500 | M 12/16 w500 | S 11/16 w500
+
+4.2 Emphasized scale: same sizes, weight w600-700 (labels w700).
+    Used for screen titles, selected states, primary buttons, big text.
+
+4.3 Hero numerals (seen in references)
+  - Timer "00 : 00 : 09" stacked vertically, ~96-120sp, monospaced
+    look (slashed zero), light/regular weight, onSurface or primary.
+  - Widget temperature "72°" ~72-96sp, bold, tight tracking, small
+    degree sign raised.
+  - Balance "$36.50" ~48-64sp, display-style numerals.
+  - Battery "66" ~48sp bold inside pill.
+  Use tabular (monospaced) figures for anything that counts/ticks.
+
+4.4 Expressive text moments
+  - Heading in rounded heavy style (ROND axis high, weight 800+) for
+    friendly messages: "Now slowly exhale", "Hi there!", "Morning".
+  - Wide (WDTH axis) text for titles in toolbars/headers when desired.
+  - Buttons: Label Large/Title Medium emphasized, ~16-20sp for big
+    pills ("Pause", "Tap to pay" go up to ~24sp for XL size).
+
+4.5 Rules: max 2-3 styles per screen, sentence case, no ALL CAPS.
+    Text color via roles only.
+
+---------------------------------------------------------------------
+5. SPACING, LAYOUT, SIZES
+---------------------------------------------------------------------
+  Grid 4dp. Steps: 4, 8, 12, 16, 20, 24, 32, 48.
+  Screen side margin: 16-24dp. Gap between sibling containers: 8-12dp,
+  segmented lists 2-4dp.
+  Touch targets >= 48dp; expressive prefers bigger.
+    Button heights: XS 32 | S 40 | M 56 (default) | L 96 | XL 136
+    Icon button container: 40-64dp
+    FAB: 56 / 80 / 96dp squircle
+    Navigation bar: 80dp (short 64dp)
+    Search bar: 56dp pill
+    Top app bar: small 64dp; medium flexible 112dp; large flexible 152dp
+    Floating toolbar: 64dp pill
+    Keypad key: ~72x56dp pill, 8dp gaps
+    Media widget: 2 buttons ~64dp + center play squircle ~72-96dp
+  Window classes: compact phone default; medium/expanded -> navigation
+  rail 80dp (expanded rail 220-360dp with "Add friend" style extended
+  squircle button on top and pill-shaped selected item).
+
+---------------------------------------------------------------------
+6. COMPONENTS (with details from the references)
+---------------------------------------------------------------------
+6.1 Top app bar
+  - Small centered title (Title Medium/Large, can be monospace/wide),
+    back arrow left (48dp), info/avatar action right (circle).
+  - Large flexible variant: big emphasized title that collapses.
+  - Background = surface; scrolled = surfaceContainer.
+
+6.2 Search bar
+  - Pill, 56dp, surfaceContainerHigh fill, leading search icon,
+    placeholder Body Large onSurfaceVariant, trailing clear/mic.
+  - Focus -> morphs into full-screen search view.
+  - Message-input style variant: outer pill container (primaryContainer
+    / secondaryContainer / tertiaryContainer), icons (+, camera, mic)
+    left, inner lighter pill text field, emoji on the right.
+
+6.3 Buttons
+  Types: Elevated, Filled, Tonal, Outlined, Text. Sizes XS..XL.
+  - Default shape pill. Square-ish variant by size (squircle).
+  - Big "Pause" style: XL pill, primary fill, icon + emphasized label,
+    full width minus margins, bottom of screen.
+  - Outlined pill ("Updated"): 2dp outline, light fill, leading cookie
+    icon in primary, big label ~24sp.
+  - Toggle button: selected = squarer + primary; unselected = pill +
+    tonal.
+  - "Going / Not Going" row: selected pill filled with check icon;
+    others rounded-rect surface-container chips with leading icon.
+
+6.4 Button group / connected group
+  - Items share one container; inner corners small (8dp), outer full.
+  - Media widget controls: [round -10s] [SQUIRCLE PLAY] [round +30s]
+    in a row, the middle one bigger and primary-colored.
+
+6.5 FAB and FAB menu (reference screenshot 2)
+  - FAB: squircle, 56/80/96dp, tertiary/primary container, "+" icon.
+  - FAB menu: vertical stack of PILLS right-aligned, each pill has a
+    leading icon + label (Select, Add photos, Share album, Search),
+    pills have DIFFERENT widths (hug content), 8dp gaps, primaryContainer
+    fill; below them a primary-filled CIRCLE with "X" (the FAB morphed).
+    Stagger entrance (30-50ms) with spatial spring.
+
+6.6 Floating toolbar (reference screenshot 2)
+  - Light pill (full radius), 64dp, holds 4 icon buttons (check, heart,
+    document, calendar) with 24dp icons, even spacing.
+  - Attached accent squircle button (pencil) to the right, 8dp gap,
+    tertiaryContainer.
+
+6.7 Navigation
+  - Bottom bar: 80dp, active = pill indicator behind icon + bold label.
+  - Rail / drawer (screenshot 2, right): panel with large left radius,
+    menu-collapse icon on top, extended squircle "Add friend" button
+    (icon + label, tertiaryContainer), then items "Friends / Alarms /
+    ..." with the selected item in a pill with secondaryContainer.
+
+6.8 Lists and cards
+  - Segmented lists: separate rounded containers, outer corners 28dp,
+    inner 4-8dp, 2dp gaps; 56-72dp rows; leading icon in 40dp circle or
+    56dp thumb with 12dp radius; trailing time/icon/switch.
+  - Cards/widgets: radius 28-48dp, padding 16-24dp, nested pill buttons.
+  - Payments-style card: big radius, top row small label + masked
+    number, huge balance numeral, two pill buttons (Add money /
+    Transfer) in a darker container, small "Cards & passes" pill chip
+    with a count badge circle hanging under the card.
+  - "Favorites" row: horizontal list of circular/pill buttons with icon
+    + small label under (Deposit, Goals, Credit score) and avatar
+    circles for people.
+
+6.9 Chips: height 32-40dp, rounded-rect 12dp or pill, selected shows
+    leading check.
+
+6.10 Text fields: filled (top corners 4-12dp) or outlined (pill/12dp);
+    label floats; supporting text Body Small.
+
+6.11 Sliders and progress (reference screenshots 1-2)
+  - THREE track styles shown:
+      a) short active segment + long inactive line, thin
+      b) thick active segment (pill), thicker inactive line
+      c) WAVY active segment (sine wave) + straight inactive line
+    Inactive line ends with a small dot (stop indicator) in primary.
+    Gap ~4dp between active and inactive parts; rounded caps.
+  - Media seek: wavy while playing, flat when paused; thumb is a thin
+    vertical rounded bar (4dp x 24-44dp), time labels under left/right
+    (Label Medium).
+  - Circular wavy progress: partial arc + wavy ring around a central
+    pause/play button (breathing screen); arc thickness 8-12dp.
+  - Haptic ticks on discrete steps.
+
+6.12 Loading indicator: morphing shape (cookie/sunny/pill) rotating,
+    48dp, in primary on primaryContainer disc (contained) or alone.
+    Used for pull-to-refresh and "searching..." states.
+
+6.13 Switch/checkbox/radio: switch 52x32dp, thumb grows with check
+    icon when on, squishes on press.
+
+6.14 Dialogs and sheets: dialog radius 28dp, padding 24dp, title
+    Headline Small; bottom sheet top radius 28dp with 32x4dp handle;
+    scrim 32%.
+
+6.15 Keypad (reference screenshot 1)
+  - Container: big rounded card (~48dp radius), page-indicator shapes on
+    top (circle, triangle, circle), 3x4 grid of PILL keys (digits Title
+    Large emphasized), backspace icon bottom-left (faded), "0" bottom
+    center. Pressed key = different container + darker text + squarer
+    shape. Use for PIN/code input if ever needed.
+
+6.16 Widgets (home screen; optional for this app)
+  - Weather: huge "72°" + cloud-sun illustration, in pill/squircle
+    container.
+  - Battery: wide pill, inner half-filled pill showing level, bold
+    number.
+  - Clock: cookie-shaped face with pink/primary hands.
+  - Greeting tiles ("Hi there!", "Morning"): squircle/rounded tile with
+    cookie clock on top and rounded heavy text under it.
+  - Media widgets: wide rounded card with album art as background
+    (dark scrim over art), title + artist left, squircle play button
+    right, bottom row: shuffle, like, previous, wavy seek, next.
+    Round (watch) variant: circular art with big circular controls.
+  - Quick-action tiles: tall pills with a single icon (run, skate,
+    tennis), pill widths slightly different.
+
+6.17 Timer / focus screen (reference screenshot 3)
+  - Centered small title with back arrow, info icon right.
+  - Huge stacked numerals, leading small activity icon.
+  - Wide XL pill "Pause" (primary) at the bottom with icon + label.
+
+6.18 Breathing / mindful screen (reference screenshot 3)
+  - Big wavy circular progress with pause button in center, heavy
+    rounded text "Now slowly exhale" in primary under it.
+
+6.19 Menus, tooltips, badges, snackbar
+  - Menu radius 16-28dp, item height 48dp, spring scale+fade from
+    anchor. Tooltip pill/8dp. Badge: 16dp circle; count badge in a
+    circle inside chips. Snackbar: inverseSurface, radius 12-16dp,
+    floating.
+
+6.20 Media player (for the song app)
+  - Album art: large square, radius 28-48dp or cookie mask.
+  - Title Headline Small emphasized; artist Title Medium secondary.
+  - Seek: wavy progress (6.11c) with time labels.
+  - Controls: [prev round 64dp] [PLAY squircle 96dp primary]
+    [next round 64dp]; shuffle/repeat as toggle icon buttons.
+  - Mini player: rounded 20-28dp container above the nav bar, 64-72dp
+    high, 48dp thumb with 12dp radius, play squircle on the right,
+    thin wavy progress along the bottom.
+  - Track download button: tonal circle/squircle icon button; while
+    downloading a circular wavy progress ring around it; done = check,
+    shape morphs and container becomes primary.
+
+---------------------------------------------------------------------
+7. ICONS
+---------------------------------------------------------------------
+  Material Symbols Rounded, weight 400 (500-600 emphasis), grade 0,
+  optical size 24. FILL=0 unselected, FILL=1 selected/active. Sizes:
+  20 compact, 24 default, 32-40 hero. Icons inside pills use 18-24dp
+  with 8dp gap to label. Icon color = on-container role.
+
+---------------------------------------------------------------------
+8. MOTION
+---------------------------------------------------------------------
+8.1 Expressive spring tokens
+  Spatial (position, size, shape, rotation; may overshoot)
+    fast    stiffness 800   damping 0.6
+    default stiffness 380   damping 0.8
+    slow    stiffness 200   damping 0.8
+  Effects (color, alpha; no overshoot)
+    fast    stiffness 3800  damping 1.0
+    default stiffness 1600  damping 1.0
+    slow    stiffness 800   damping 1.0
+  Calmer "standard" scheme for dense screens: spatial 700/0.9,
+  effects 1600/1.0.
+8.2 Rules
+  - Springs, not fixed-duration tweens, for touch-driven motion.
+  - fast = small elements (switch, chip, icon), default = buttons/
+    cards/FAB, slow = full-screen containers.
+  - Shared-axis / container transform between screens, predictive back
+    with shrink + rounded corners.
+  - Staggered list/menu entrance (30-50ms each, max ~8 items).
+  - Press: scale 0.96-0.98 + shape morph + haptic.
+  - Wavy progress: wave phase scrolls continuously while active;
+    amplitude animates to 0 when paused/finished.
+  - Respect system "Remove animations".
+
+---------------------------------------------------------------------
+9. ELEVATION
+---------------------------------------------------------------------
+  0dp surfaces; 1dp elevated cards; 3dp menus; 6dp FAB/floating
+  toolbar; 12dp dialogs. Prefer color step over shadow. Shadows are
+  soft neutral black, nearly invisible in dark theme. No tint overlays.
+
+---------------------------------------------------------------------
+10. JETPACK COMPOSE NOTES
+---------------------------------------------------------------------
+  - androidx.compose.material3 1.4.0+ (Expressive APIs are
+    @ExperimentalMaterial3ExpressiveApi; names may vary).
+  - Define lightColorScheme/darkColorScheme ONLY from the user palette
+    (section 2). No dynamicColorScheme.
+  - MaterialExpressiveTheme(colorScheme, motionScheme =
+    MotionScheme.expressive(), shapes, typography). Fallback:
+    MaterialTheme + manual spring specs from section 8.
+  - Components: LoadingIndicator / ContainedLoadingIndicator,
+    LinearWavyProgressIndicator, CircularWavyProgressIndicator,
+    ButtonGroup, ToggleButton, SplitButton, FloatingToolbar,
+    FloatingActionButtonMenu, Large/MediumFlexibleTopAppBar,
+    ShortNavigationBar, WideNavigationRail, ExpandedFullScreenSearchBar,
+    MaterialShapes (+ toShape(), Morph), expressive Slider.
+  - Fallback for missing components: Surface/Box with custom Shape
+    (RoundedCornerShape, CircleShape, MaterialShapes) + animate*AsState
+    with spring(dampingRatio, stiffness).
+  - enableEdgeToEdge(); handle insets; system bar icon color by theme.
+  - Variable font: use Google Sans Flex / Roboto Flex with
+    FontVariation.Settings (weight, width, ROND) when supported.
+
+---------------------------------------------------------------------
+11. DO / DON'T
+---------------------------------------------------------------------
+  DO   mix pill, squircle, circle and one cookie shape per screen
+  DO   huge numerals and bold/rounded headings
+  DO   one dominant primary action, others tonal
+  DO   wavy progress for playback/download
+  DO   springs + shape morph + haptics
+  DO   use only user-provided palette via roles
+  DON'T hardcode colors or invent a palette
+  DON'T use sharp corners, hairline dividers everywhere, ALL CAPS
+  DON'T use heavy shadows or gradients
+  DON'T use touch targets < 48dp or text < 11sp
+  DON'T put more than 1-2 decorative shapes on a screen
+
+---------------------------------------------------------------------
+12. SCREEN TEMPLATE: "SEARCH SONG AND DOWNLOAD" APP
+---------------------------------------------------------------------
+  Screen 1 Search
+    - Large flexible top app bar, emphasized title.
+    - Pill search bar (6.2); connected button group for filters.
+    - Results: segmented list, 56dp thumbs (12dp radius), title, artist
+      + duration, trailing tonal download button (6.20).
+    - Empty state: cookie shape icon + rounded heavy text.
+    - Loading: morphing LoadingIndicator.
+    - FAB squircle (optional) -> FAB menu with pills.
+  Screen 2 Downloads
+    - Segmented list, swipe to delete, circular wavy progress on active
+      downloads.
+  Screen 3 Player
+    - Layout from 6.20, wavy seek, squircle play button.
+  Navigation: bottom navigation bar (Search / Downloads / Settings)
+  + mini player above it. Theme: follow system, both schemes from the
+  user palette.
+
+=====================================================================
+END OF SPEC v2
+=====================================================================

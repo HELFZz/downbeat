@@ -1,0 +1,29 @@
+# Built by Gradle
+.gradle/
+build/
+app/build/
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local configuration
+local.properties
+*.jks
+*.keystore
+!debug.keystore
+
+# IDE
+.idea/
+*.iml
+*.hprof
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tooling logs
+*.log
+
+# Release artifacts
+dist/
